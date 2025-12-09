@@ -511,6 +511,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-slot:hover {
+            transform: scale(1.05);
         }
 
         .image-slot.locked {
@@ -520,6 +526,12 @@
         .image-slot.unlocked {
             border-color: #C9395A;
             box-shadow: 0 0 20px rgba(201, 57, 90, 0.3);
+        }
+
+        .image-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .lock-icon {
@@ -532,17 +544,6 @@
             color: #6C7A7D;
             text-align: center;
             padding: 0 5px;
-        }
-
-        .image-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #C9395A 0%, #7D1E3A 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            color: white;
         }
 
         .error-message {
@@ -644,7 +645,6 @@
             }
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -685,29 +685,24 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        const IMAGE_CONFIG = {
+            images: [
+                { id: 1, threshold: 20, name: "첫 만남", url: "https://via.placeholder.com/400x400/C9395A/FFFFFF?text=Image+1" },
+                { id: 2, threshold: 40, name: "친밀해짐", url: "https://via.placeholder.com/400x400/E8749B/FFFFFF?text=Image+2" },
+                { id: 3, threshold: 60, name: "설레는 순간", url: "https://via.placeholder.com/400x400/FFB3D9/FFFFFF?text=Image+3" },
+                { id: 4, threshold: 80, name: "깊어지는 관계", url: "https://via.placeholder.com/400x400/7D1E3A/FFFFFF?text=Image+4" },
+                { id: 5, threshold: 100, name: "완전한 신뢰", url: "https://via.placeholder.com/400x400/B794F6/FFFFFF?text=Image+5" }
+            ]
+        };
+
         const SAMPLE_CHARACTERS = {
-            characterA: {
-                name: "강태현",
-                age: 28,
-                role: "공",
-                personality: "냉혈공",
-                occupation: "대기업 이사",
-                emoji: "🔺"
-            },
-            characterB: {
-                name: "이준서",
-                age: 24,
-                role: "수",
-                personality: "강수",
-                occupation: "신입 사원",
-                emoji: "🔻"
-            }
+            characterA: { name: "강태현", age: 28, role: "공", personality: "냉혈공", occupation: "대기업 이사", emoji: "🔺" },
+            characterB: { name: "이준서", age: 24, role: "수", personality: "강수", occupation: "신입 사원", emoji: "🔻" }
         };
 
         const INITIAL_SCENE = {
             time: "11월 15일 금요일 19:30",
-            location: "회사 - 대표이사실",
-            situation: "야근 중 둘만 남은 사무실"
+            location: "회사 - 대표이사실"
         };
 
         function KindCatApp() {
@@ -723,30 +718,31 @@
             const [sidebarOpen, setSidebarOpen] = useState(true);
             const messagesEndRef = useRef(null);
 
-            const scrollToBottom = () => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            };
-
             useEffect(() => {
-                scrollToBottom();
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }, [messages]);
 
             useEffect(() => {
                 const newUnlocks = [];
-                if (affectionScore >= 20 && !unlockedImages.includes(1)) newUnlocks.push(1);
-                if (affectionScore >= 40 && !unlockedImages.includes(2)) newUnlocks.push(2);
-                if (affectionScore >= 60 && !unlockedImages.includes(3)) newUnlocks.push(3);
-                if (affectionScore >= 80 && !unlockedImages.includes(4)) newUnlocks.push(4);
-                if (affectionScore >= 100 && !unlockedImages.includes(5)) newUnlocks.push(5);
+                IMAGE_CONFIG.images.forEach(img => {
+                    if (affectionScore >= img.threshold && !unlockedImages.includes(img.id)) {
+                        newUnlocks.push(img.id);
+                    }
+                });
                 
                 if (newUnlocks.length > 0) {
                     setUnlockedImages([...unlockedImages, ...newUnlocks]);
+                    const unlockedImg = IMAGE_CONFIG.images.find(img => newUnlocks.includes(img.id));
+                    if (unlockedImg) {
+                        setMessages(prev => [...prev, {
+                            type: "system",
+                            content: `🎉 새로운 일러스트 해금!\n"${unlockedImg.name}" (호감도 ${unlockedImg.threshold}점)`
+                        }]);
+                    }
                 }
             }, [affectionScore]);
 
-            const toggleSidebar = () => {
-                setSidebarOpen(!sidebarOpen);
-            };
+            const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
             const startStory = () => {
                 if (!apiKey.trim()) {
@@ -758,7 +754,7 @@
             };
 
             const initializeStory = async () => {
-                const initialMessage = {
+                setMessages([{
                     type: "system",
                     content: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⏰ ${INITIAL_SCENE.time}
@@ -773,185 +769,94 @@
    ▫️ 상태: 문 앞에 서서 보고서를 들고 있음
    ▫️ 복장: 단정한 셔츠와 슬랙스
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-                };
-
-                setMessages([initialMessage]);
+                }]);
                 await generateAIResponse("스토리를 시작해주세요.", true);
             };
 
-            const generateAIResponse = async (userMessage, isInitial = false) => {
+            const generateAIResponse = async (userMessage) => {
                 setLoading(true);
 
                 try {
-                    const prompt = `당신은 한국 BL 장르의 인터랙티브 픽션 작가입니다.
-
-[캐릭터]
-- 공: ${SAMPLE_CHARACTERS.characterA.name}, ${SAMPLE_CHARACTERS.characterA.age}세, ${SAMPLE_CHARACTERS.characterA.personality}
-- 수: ${SAMPLE_CHARACTERS.characterB.name}, ${SAMPLE_CHARACTERS.characterB.age}세, ${SAMPLE_CHARACTERS.characterB.personality}
-
-[현재 상황]
-- 장소: ${INITIAL_SCENE.location}
-- 호감도: ${affectionScore}/100
-- 흥분도: ${excitementLevel}%
-- 턴: ${turnCount}
-
-[규칙]
-1. ${SAMPLE_CHARACTERS.characterB.name}의 1인칭 시점
-2. 감정을 신체 반응으로 표현
-3. 300-500자 분량
-4. JSON 형식으로 응답
+                    const prompt = `당신은 한국 BL 장르의 작가입니다.
+캐릭터: ${SAMPLE_CHARACTERS.characterA.name}(공, ${SAMPLE_CHARACTERS.characterA.personality}), ${SAMPLE_CHARACTERS.characterB.name}(수, ${SAMPLE_CHARACTERS.characterB.personality})
+현재: 호감도 ${affectionScore}/100, 흥분도 ${excitementLevel}%, 턴 ${turnCount}
+시점: ${SAMPLE_CHARACTERS.characterB.name} 1인칭
+규칙: 감정을 신체 반응으로 표현, 300-500자
 
 사용자 행동: ${userMessage}
 
-다음 JSON 형식으로만 응답하세요:
-{
-  "narrative": "서술",
-  "affection_change": 0,
-  "excitement_change": 0,
-  "choices": ["선택1", "선택2", "선택3", "선택4"]
-}`;
+JSON 형식으로만 응답:
+{"narrative": "서술", "affection_change": 0, "excitement_change": 0, "choices": ["선택1", "선택2", "선택3", "선택4"]}`;
 
-                    // 여러 모델 시도
-                    const models = [
-                        'gemini-1.5-pro-latest',
-                        'gemini-1.5-pro',
-                        'gemini-pro'
-                    ];
+                    // ⭐ 수정: v1 API와 gemini-1.5-flash 사용
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-                    let response = null;
-                    let lastError = null;
-
-                    for (const model of models) {
-                        try {
-                            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                            
-                            console.log(`시도 중: ${model}`);
-
-                            response = await fetch(apiUrl, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    contents: [{
-                                        parts: [{
-                                            text: prompt
-                                        }]
-                                    }],
-                                    generationConfig: {
-                                        temperature: 0.9,
-                                        topK: 40,
-                                        topP: 0.95,
-                                        maxOutputTokens: 1024,
-                                    }
-                                })
-                            });
-
-                            if (response.ok) {
-                                console.log(`성공: ${model}`);
-                                break;
-                            } else {
-                                lastError = await response.json().catch(() => ({}));
-                                console.log(`실패: ${model}`, lastError);
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0.9,
+                                maxOutputTokens: 1024
                             }
-                        } catch (e) {
-                            lastError = e;
-                            console.log(`오류: ${model}`, e);
-                        }
-                    }
+                        })
+                    });
 
-                    if (!response || !response.ok) {
-                        throw new Error(lastError?.error?.message || '모든 모델 시도 실패');
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error?.message || `API 오류 (${response.status})`);
                     }
 
                     const data = await response.json();
-                    console.log("API 응답:", data);
                     
-                    if (data.candidates && data.candidates[0]) {
-                        let text = data.candidates[0].content.parts[0].text;
-                        
-                        // JSON 추출
-                        let result;
-                        try {
-                            text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-                            const jsonMatch = text.match(/\{[\s\S]*\}/);
-                            
-                            if (jsonMatch) {
-                                result = JSON.parse(jsonMatch[0]);
-                            } else {
-                                result = {
-                                    narrative: text,
-                                    affection_change: Math.floor(Math.random() * 5),
-                                    excitement_change: Math.floor(Math.random() * 5),
-                                    choices: [
-                                        "적극적으로 다가가기",
-                                        "조심스럽게 말 걸기", 
-                                        "상황을 지켜보기",
-                                        "자리를 피하기"
-                                    ]
-                                };
-                            }
-                        } catch (e) {
-                            console.error("JSON 파싱 오류:", e);
-                            result = {
-                                narrative: text.substring(0, 500),
-                                affection_change: 0,
-                                excitement_change: 0,
-                                choices: ["계속하기"]
-                            };
-                        }
-
-                        // 점수 업데이트
-                        setAffectionScore(prev => Math.max(0, Math.min(100, prev + (result.affection_change || 0))));
-                        setExcitementLevel(prev => Math.max(0, Math.min(100, prev + (result.excitement_change || 0))));
-                        setTurnCount(prev => prev + 1);
-
-                        // 메시지 추가
-                        const newMessage = {
-                            type: "story",
-                            content: result.narrative,
-                            choices: result.choices || []
-                        };
-
-                        setMessages(prev => [...prev, newMessage]);
-                    } else {
+                    if (!data.candidates?.[0]) {
                         throw new Error("AI 응답이 비어있습니다.");
                     }
+
+                    let text = data.candidates[0].content.parts[0].text;
+                    let result;
+
+                    try {
+                        text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        
+                        result = jsonMatch ? JSON.parse(jsonMatch[0]) : {
+                            narrative: text,
+                            affection_change: Math.floor(Math.random() * 5),
+                            excitement_change: Math.floor(Math.random() * 5),
+                            choices: ["적극적으로 다가가기", "조심스럽게 말 걸기", "상황을 지켜보기", "자리를 피하기"]
+                        };
+                    } catch (e) {
+                        result = {
+                            narrative: text.substring(0, 500),
+                            affection_change: 0,
+                            excitement_change: 0,
+                            choices: ["계속하기"]
+                        };
+                    }
+
+                    setAffectionScore(prev => Math.max(0, Math.min(100, prev + (result.affection_change || 0))));
+                    setExcitementLevel(prev => Math.max(0, Math.min(100, prev + (result.excitement_change || 0))));
+                    setTurnCount(prev => prev + 1);
+
+                    setMessages(prev => [...prev, {
+                        type: "story",
+                        content: result.narrative,
+                        choices: result.choices || []
+                    }]);
+
                 } catch (error) {
                     console.error("API Error:", error);
-                    
-                    let errorMsg = "오류가 발생했습니다.\n\n";
-                    
-                    if (error.message.includes('API_KEY_INVALID')) {
-                        errorMsg += "❌ API 키가 유효하지 않습니다.\n\n";
-                        errorMsg += "해결 방법:\n";
-                        errorMsg += "1. Google AI Studio에서 새 키 발급\n";
-                        errorMsg += "2. 키를 정확히 복사했는지 확인\n";
-                        errorMsg += "3. 공백이 포함되지 않았는지 확인";
-                    } else if (error.message.includes('PERMISSION_DENIED')) {
-                        errorMsg += "❌ Gemini API 권한이 없습니다.\n\n";
-                        errorMsg += "Google AI Studio에서 Gemini API를 활성화해주세요.";
-                    } else {
-                        errorMsg += `오류 내용: ${error.message}\n\n`;
-                        errorMsg += "API 키를 확인하고 다시 시도해주세요.";
-                    }
-                    
-                    alert(errorMsg);
-                    
-                    setMessages(prev => [...prev, {
-                        type: "error",
-                        content: `⚠️ ${error.message}`
-                    }]);
+                    alert(`오류: ${error.message}\n\nAPI 키를 확인해주세요.`);
+                    setMessages(prev => [...prev, { type: "error", content: `⚠️ ${error.message}` }]);
                 } finally {
                     setLoading(false);
                 }
             };
 
             const handleChoiceClick = async (choice) => {
-                setMessages(prev => [...prev, {
-                    type: "user",
-                    content: choice
-                }]);
+                setMessages(prev => [...prev, { type: "user", content: choice }]);
                 await generateAIResponse(choice);
             };
 
@@ -961,12 +866,7 @@
 
                 const message = userInput;
                 setUserInput("");
-
-                setMessages(prev => [...prev, {
-                    type: "user",
-                    content: message
-                }]);
-
+                setMessages(prev => [...prev, { type: "user", content: message }]);
                 await generateAIResponse(message);
             };
 
@@ -989,12 +889,8 @@
                                 스토리 시작하기
                             </button>
                             <div className="api-help">
-                                <strong>🔑 API 키 발급 방법:</strong><br/><br/>
-                                1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> 접속<br/>
-                                2. 좌측 메뉴에서 "Get API Key" 클릭<br/>
-                                3. "Create API key in new project" 선택<br/>
-                                4. 생성된 키를 복사 (AIza로 시작)<br/>
-                                5. 위 입력창에 붙여넣기
+                                <strong>🔑 API 키 발급:</strong><br/>
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>에서 무료로 발급
                             </div>
                         </div>
                     </div>
@@ -1008,28 +904,21 @@
                             <div className="cat-icon">🐱</div>
                             <div className="brand-name">KIND CAT</div>
                         </div>
-                        <button className="menu-btn" onClick={toggleSidebar}>
-                            ☰
-                        </button>
+                        <button className="menu-btn" onClick={toggleSidebar}>☰</button>
                     </div>
 
-                    <div 
-                        className={`overlay ${sidebarOpen ? '' : 'active'}`}
-                        onClick={toggleSidebar}
-                    />
+                    <div className={`overlay ${sidebarOpen ? '' : 'active'}`} onClick={toggleSidebar} />
 
                     <div className="main-content">
                         <div className={`sidebar ${sidebarOpen ? '' : 'mobile-hidden'}`}>
                             <div className="sidebar-section">
                                 <div className="section-title">Characters</div>
-                                
                                 <div className="character-card">
                                     <h3>{SAMPLE_CHARACTERS.characterA.emoji} {SAMPLE_CHARACTERS.characterA.name}</h3>
                                     <p>{SAMPLE_CHARACTERS.characterA.age}세 · {SAMPLE_CHARACTERS.characterA.role}</p>
                                     <p>{SAMPLE_CHARACTERS.characterA.personality}</p>
                                     <p>{SAMPLE_CHARACTERS.characterA.occupation}</p>
                                 </div>
-
                                 <div className="character-card" style={{background: 'linear-gradient(135deg, #E8749B 0%, #7D1E3A 100%)'}}>
                                     <h3>{SAMPLE_CHARACTERS.characterB.emoji} {SAMPLE_CHARACTERS.characterB.name}</h3>
                                     <p>{SAMPLE_CHARACTERS.characterB.age}세 · {SAMPLE_CHARACTERS.characterB.role}</p>
@@ -1040,7 +929,6 @@
 
                             <div className="sidebar-section">
                                 <div className="section-title">Story Status</div>
-                                
                                 <div className="stats-grid">
                                     <div className="stat-item">
                                         <div className="stat-label">진행 턴</div>
@@ -1051,7 +939,6 @@
                                         <div className="stat-value">{excitementLevel}%</div>
                                     </div>
                                 </div>
-
                                 <div className="affection-meter">
                                     <div className="stat-label">관계 점수</div>
                                     <div className="affection-bar">
@@ -1063,21 +950,23 @@
                             </div>
 
                             <div className="sidebar-section gallery-section">
-                                <div className="section-title">Gallery ({unlockedImages.length}/5)</div>
-                                
+                                <div className="section-title">Gallery ({unlockedImages.length}/{IMAGE_CONFIG.images.length})</div>
                                 <div className="gallery-grid">
-                                    {[1, 2, 3, 4, 5].map(num => (
-                                        <div key={num} className={`image-slot ${unlockedImages.includes(num) ? 'unlocked' : 'locked'}`}>
-                                            {unlockedImages.includes(num) ? (
-                                                <div className="image-placeholder">#{num}</div>
-                                            ) : (
-                                                <>
-                                                    <div className="lock-icon">🔒</div>
-                                                    <div className="unlock-text">{num * 20}점</div>
-                                                </>
-                                            )}
-                                        </div>
-                                    ))}
+                                    {IMAGE_CONFIG.images.map(img => {
+                                        const isUnlocked = unlockedImages.includes(img.id);
+                                        return (
+                                            <div key={img.id} className={`image-slot ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                                                {isUnlocked && img.url ? (
+                                                    <img src={img.url} alt={img.name} />
+                                                ) : (
+                                                    <>
+                                                        <div className="lock-icon">🔒</div>
+                                                        <div className="unlock-text">{img.threshold}점</div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -1104,7 +993,7 @@
                                                     <div className="avatar">📖</div>
                                                     <div style={{flex: 1}}>
                                                         <div className="message-content">{msg.content}</div>
-                                                        {msg.choices && msg.choices.length > 0 && (
+                                                        {msg.choices?.length > 0 && (
                                                             <div className="choice-grid">
                                                                 {msg.choices.map((choice, i) => (
                                                                     <button
