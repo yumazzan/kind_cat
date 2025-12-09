@@ -8,594 +8,101 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
-            background: #1A1A1A;
-            min-height: 100vh;
-            color: #FFFFFF;
-            overflow-x: hidden;
-        }
-
-        .app-container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 0;
-        }
-
-        .header {
-            background: #2D3436;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid #C9395A;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .cat-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3em;
-        }
-
-        .brand-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            letter-spacing: 2px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .menu-btn {
-            width: 40px;
-            height: 40px;
-            background: transparent;
-            border: 2px solid #C9395A;
-            border-radius: 8px;
-            color: #C9395A;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: none;
-        }
-
-        .menu-btn:hover {
-            background: #C9395A;
-            color: white;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            height: calc(100vh - 80px);
-            position: relative;
-        }
-
-        .sidebar {
-            background: #2D3436;
-            border-right: 1px solid #3D4446;
-            overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.mobile-hidden {
-            transform: translateX(-100%);
-        }
-
-        .sidebar-section {
-            padding: 20px;
-            border-bottom: 1px solid #3D4446;
-        }
-
-        .section-title {
-            font-size: 0.9em;
-            color: #C9395A;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        .character-card {
-            background: linear-gradient(135deg, #C9395A 0%, #7D1E3A 100%);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-
-        .character-card h3 {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .character-card p {
-            font-size: 0.85em;
-            line-height: 1.5;
-            margin: 4px 0;
-            opacity: 0.95;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .stat-item {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.75em;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #FFB3D9;
-        }
-
-        .affection-meter {
-            margin-top: 15px;
-        }
-
-        .affection-bar {
-            background: rgba(0,0,0,0.3);
-            height: 30px;
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-            margin-top: 8px;
-        }
-
-        .affection-fill {
-            background: linear-gradient(90deg, #E8749B, #FFB3D9);
-            height: 100%;
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9em;
-            min-width: 50px;
-        }
-
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-            background: #1A1A1A;
-        }
-
-        .chat-header {
-            background: #2D3436;
-            padding: 15px 25px;
-            border-bottom: 1px solid #3D4446;
-        }
-
-        .chat-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .scene-info {
-            font-size: 0.85em;
-            opacity: 0.7;
-        }
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .message-bubble {
-            margin-bottom: 20px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .bubble-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .bubble-wrapper.user {
-            flex-direction: row-reverse;
-        }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            max-width: 70%;
-            padding: 15px 20px;
-            border-radius: 20px;
-            line-height: 1.7;
-            white-space: pre-wrap;
-            word-break: keep-all;
-        }
-
-        .message-bubble.system .message-content {
-            background: #2D3436;
-            color: #FFFFFF;
-            max-width: 100%;
-            text-align: center;
-            font-size: 0.9em;
-            border: 1px solid #3D4446;
-        }
-
-        .message-bubble.story .message-content {
-            background: #3D4446;
-            color: #FFFFFF;
-            border-left: 3px solid #C9395A;
-            max-width: 85%;
-        }
-
-        .message-bubble.user .message-content {
-            background: #C9395A;
-            color: #FFFFFF;
-            border-radius: 20px 20px 4px 20px;
-        }
-
-        .message-meta {
-            font-size: 0.75em;
-            opacity: 0.6;
-            margin-left: 15px;
-            margin-bottom: 5px;
-        }
-
-        .choice-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-            max-width: 85%;
-        }
-
-        .choice-btn {
-            padding: 12px 18px;
-            background: rgba(201, 57, 90, 0.2);
-            border: 2px solid #C9395A;
-            border-radius: 12px;
-            color: #FFFFFF;
-            font-size: 0.95em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-
-        .choice-btn:hover {
-            background: #C9395A;
-            transform: translateX(5px);
-        }
-
-        .choice-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .input-area {
-            padding: 20px;
-            background: #2D3436;
-            border-top: 1px solid #3D4446;
-        }
-
-        .input-wrapper {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .input-field {
-            flex: 1;
-            background: #1A1A1A;
-            border: 2px solid #3D4446;
-            color: #FFFFFF;
-            padding: 14px 18px;
-            border-radius: 25px;
-            font-size: 1em;
-            font-family: inherit;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: #C9395A;
-        }
-
-        .input-field::placeholder {
-            color: #6C7A7D;
-        }
-
-        .send-btn {
-            width: 50px;
-            height: 50px;
-            background: #C9395A;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover {
-            background: #7D1E3A;
-            transform: scale(1.1);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading-indicator {
-            text-align: center;
-            padding: 20px;
-            color: #6C7A7D;
-            font-style: italic;
-        }
-
-        .loading-indicator::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-
-        .start-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .start-container {
-            background: #2D3436;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            border: 2px solid #C9395A;
-        }
-
-        .start-logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 25px;
-            background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-        }
-
-        .start-title {
-            font-size: 1.8em;
-            margin-bottom: 10px;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 3px;
-        }
-
-        .start-subtitle {
-            color: #C9395A;
-            margin-bottom: 25px;
-            font-size: 1em;
-        }
-
-        .api-input {
-            width: 100%;
-            background: #1A1A1A;
-            border: 2px solid #3D4446;
-            color: #FFFFFF;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 1em;
-            margin-bottom: 20px;
-        }
-
-        .api-input:focus {
-            outline: none;
-            border-color: #C9395A;
-        }
-
-        .start-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #C9395A 0%, #7D1E3A 100%);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .start-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(201, 57, 90, 0.3);
-        }
-
-        .api-help {
-            margin-top: 20px;
-            font-size: 0.85em;
-            color: #6C7A7D;
-            line-height: 1.6;
-        }
-
-        .api-help a {
-            color: #E8749B;
-            text-decoration: none;
-        }
-
-        .api-help a:hover {
-            text-decoration: underline;
-        }
-
-        .gallery-section {
-            padding: 20px;
-            border-top: 1px solid #3D4446;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .image-slot {
-            aspect-ratio: 1;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            background: #1A1A1A;
-            border: 2px solid #3D4446;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .image-slot:hover {
-            transform: scale(1.05);
-        }
-
-        .image-slot.locked {
-            opacity: 0.5;
-        }
-
-        .image-slot.unlocked {
-            border-color: #C9395A;
-            box-shadow: 0 0 20px rgba(201, 57, 90, 0.3);
-        }
-
-        .image-slot img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .lock-icon {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-
-        .unlock-text {
-            font-size: 0.7em;
-            color: #6C7A7D;
-            text-align: center;
-            padding: 0 5px;
-        }
-
-        .error-message {
-            background: rgba(201, 57, 90, 0.2);
-            border: 1px solid #C9395A;
-            color: #FFB3D9;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px;
-            text-align: center;
-            line-height: 1.6;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #1A1A1A; min-height: 100vh; color: #FFFFFF; overflow-x: hidden; }
+        .app-container { max-width: 100%; margin: 0 auto; padding: 0; }
+        .header { background: #2D3436; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #C9395A; position: sticky; top: 0; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .cat-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3em; }
+        .brand-name { font-size: 1.3em; font-weight: bold; letter-spacing: 2px; font-family: 'Courier New', monospace; }
+        .menu-btn { width: 40px; height: 40px; background: transparent; border: 2px solid #C9395A; border-radius: 8px; color: #C9395A; font-size: 1.2em; cursor: pointer; transition: all 0.3s ease; display: none; }
+        .menu-btn:hover { background: #C9395A; color: white; }
+        .main-content { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 80px); position: relative; }
+        .sidebar { background: #2D3436; border-right: 1px solid #3D4446; overflow-y: auto; transition: transform 0.3s ease; }
+        .sidebar.mobile-hidden { transform: translateX(-100%); }
+        .sidebar-section { padding: 20px; border-bottom: 1px solid #3D4446; }
+        .section-title { font-size: 0.9em; color: #C9395A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: bold; }
+        .character-card { background: linear-gradient(135deg, #C9395A 0%, #7D1E3A 100%); padding: 15px; border-radius: 12px; margin-bottom: 12px; }
+        .character-card h3 { font-size: 1.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .character-card p { font-size: 0.85em; line-height: 1.5; margin: 4px 0; opacity: 0.95; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-label { font-size: 0.75em; opacity: 0.8; margin-bottom: 5px; }
+        .stat-value { font-size: 1.2em; font-weight: bold; color: #FFB3D9; }
+        .affection-meter { margin-top: 15px; }
+        .affection-bar { background: rgba(0,0,0,0.3); height: 30px; border-radius: 15px; overflow: hidden; position: relative; margin-top: 8px; }
+        .affection-fill { background: linear-gradient(90deg, #E8749B, #FFB3D9); height: 100%; transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9em; min-width: 50px; }
+        .chat-area { display: flex; flex-direction: column; background: #1A1A1A; }
+        .chat-header { background: #2D3436; padding: 15px 25px; border-bottom: 1px solid #3D4446; }
+        .chat-title { font-size: 1.2em; font-weight: bold; margin-bottom: 5px; }
+        .scene-info { font-size: 0.85em; opacity: 0.7; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 20px; }
+        .message-bubble { margin-bottom: 20px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .bubble-wrapper { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+        .bubble-wrapper.user { flex-direction: row-reverse; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%); display: flex; align-items: center; justify-content: center; font-size: 1.2em; flex-shrink: 0; }
+        .message-content { max-width: 70%; padding: 15px 20px; border-radius: 20px; line-height: 1.7; white-space: pre-wrap; word-break: keep-all; }
+        .message-bubble.system .message-content { background: #2D3436; color: #FFFFFF; max-width: 100%; text-align: center; font-size: 0.9em; border: 1px solid #3D4446; }
+        .message-bubble.story .message-content { background: #3D4446; color: #FFFFFF; border-left: 3px solid #C9395A; max-width: 85%; }
+        .message-bubble.user .message-content { background: #C9395A; color: #FFFFFF; border-radius: 20px 20px 4px 20px; }
+        .message-meta { font-size: 0.75em; opacity: 0.6; margin-left: 15px; margin-bottom: 5px; }
+        .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; max-width: 85%; }
+        .choice-btn { padding: 12px 18px; background: rgba(201, 57, 90, 0.2); border: 2px solid #C9395A; border-radius: 12px; color: #FFFFFF; font-size: 0.95em; cursor: pointer; transition: all 0.3s ease; text-align: left; }
+        .choice-btn:hover { background: #C9395A; transform: translateX(5px); }
+        .choice-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .input-area { padding: 20px; background: #2D3436; border-top: 1px solid #3D4446; }
+        .input-wrapper { display: flex; gap: 12px; align-items: center; }
+        .input-field { flex: 1; background: #1A1A1A; border: 2px solid #3D4446; color: #FFFFFF; padding: 14px 18px; border-radius: 25px; font-size: 1em; font-family: inherit; }
+        .input-field:focus { outline: none; border-color: #C9395A; }
+        .input-field::placeholder { color: #6C7A7D; }
+        .send-btn { width: 50px; height: 50px; background: #C9395A; border: none; border-radius: 50%; color: white; font-size: 1.2em; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .send-btn:hover { background: #7D1E3A; transform: scale(1.1); }
+        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        .loading-indicator { text-align: center; padding: 20px; color: #6C7A7D; font-style: italic; }
+        .loading-indicator::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+        .start-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .start-container { background: #2D3436; border-radius: 20px; padding: 40px; max-width: 500px; width: 100%; text-align: center; border: 2px solid #C9395A; }
+        .start-logo { width: 100px; height: 100px; margin: 0 auto 25px; background: linear-gradient(135deg, #FFB3D9 0%, #B794F6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3em; }
+        .start-title { font-size: 1.8em; margin-bottom: 10px; font-family: 'Courier New', monospace; letter-spacing: 3px; }
+        .start-subtitle { color: #C9395A; margin-bottom: 25px; font-size: 1em; }
+        .api-input { width: 100%; background: #1A1A1A; border: 2px solid #3D4446; color: #FFFFFF; padding: 15px; border-radius: 12px; font-size: 1em; margin-bottom: 20px; }
+        .api-input:focus { outline: none; border-color: #C9395A; }
+        .start-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #C9395A 0%, #7D1E3A 100%); border: none; border-radius: 12px; color: white; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
+        .start-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(201, 57, 90, 0.3); }
+        .api-help { margin-top: 20px; font-size: 0.85em; color: #6C7A7D; line-height: 1.6; }
+        .api-help a { color: #E8749B; text-decoration: none; }
+        .api-help a:hover { text-decoration: underline; }
+        .gallery-section { padding: 20px; border-top: 1px solid #3D4446; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+        .image-slot { aspect-ratio: 1; border-radius: 10px; overflow: hidden; position: relative; background: #1A1A1A; border: 2px solid #3D4446; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
+        .image-slot:hover { transform: scale(1.05); }
+        .image-slot.locked { opacity: 0.5; }
+        .image-slot.unlocked { border-color: #C9395A; box-shadow: 0 0 20px rgba(201, 57, 90, 0.3); }
+        .image-slot img { width: 100%; height: 100%; object-fit: cover; }
+        .lock-icon { font-size: 1.5em; margin-bottom: 5px; }
+        .unlock-text { font-size: 0.7em; color: #6C7A7D; text-align: center; padding: 0 5px; }
+        .error-message { background: rgba(201, 57, 90, 0.2); border: 1px solid #C9395A; color: #FFB3D9; padding: 15px; border-radius: 10px; margin: 20px; text-align: center; line-height: 1.6; }
         @media (max-width: 1024px) {
             .menu-btn { display: block; }
             .main-content { grid-template-columns: 1fr; }
-            .sidebar {
-                position: fixed;
-                top: 61px;
-                left: 0;
-                width: 280px;
-                height: calc(100vh - 61px);
-                z-index: 90;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-            }
+            .sidebar { position: fixed; top: 61px; left: 0; width: 280px; height: calc(100vh - 61px); z-index: 90; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
             .sidebar.mobile-hidden { transform: translateX(-100%); }
             .chat-area { height: calc(100vh - 61px); }
             .message-content { max-width: 85%; }
             .choice-grid { grid-template-columns: 1fr; max-width: 100%; }
             .gallery-grid { grid-template-columns: repeat(3, 1fr); }
         }
-
         @media (max-width: 480px) {
             .messages-container { padding: 15px; }
             .input-area { padding: 15px; }
             .gallery-grid { grid-template-columns: repeat(2, 1fr); }
         }
-
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1A1A1A; }
         ::-webkit-scrollbar-thumb { background: #C9395A; border-radius: 4px; }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 80;
-        }
+        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 80; }
         .overlay.active { display: block; }
     </style>
 </head>
@@ -703,9 +210,9 @@
 JSON 형식으로만 응답:
 {"narrative": "서술", "affection_change": 0, "excitement_change": 0, "choices": ["선택1", "선택2", "선택3", "선택4"]}`;
 
-                    // ⭐⭐⭐ 최종 수정: v1 엔드포인트와 gemini-1.5-flash 사용
+                    // ⭐⭐⭐ 최종 수정: gemini-1.5-flash-latest 시도
                     const response = await fetch(
-                        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -761,7 +268,7 @@ JSON 형식으로만 응답:
 
                 } catch (error) {
                     console.error("API Error:", error);
-                    alert(`오류 발생!\n\n${error.message}\n\n• API 키를 확인하세요\n• https://aistudio.google.com 에서 키 재발급`);
+                    alert(`❌ API 오류\n\n${error.message}\n\n해결 방법:\n1. API 키가 올바른지 확인\n2. https://aistudio.google.com 에서 키 재발급\n3. Gemini API가 활성화되어 있는지 확인`);
                     setMessages(prev => [...prev, { type: "error", content: `⚠️ ${error.message}` }]);
                 } finally {
                     setLoading(false);
@@ -800,7 +307,8 @@ JSON 형식으로만 응답:
                             <button className="start-btn" onClick={startStory}>스토리 시작하기</button>
                             <div className="api-help">
                                 <strong>🔑 API 키 발급:</strong><br/>
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>에서 무료 발급
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>에서 무료 발급<br/>
+                                (AIza로 시작하는 키를 입력하세요)
                             </div>
                         </div>
                     </div>
@@ -816,9 +324,7 @@ JSON 형식으로만 응답:
                         </div>
                         <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
                     </div>
-
                     <div className={`overlay ${sidebarOpen ? '' : 'active'}`} onClick={() => setSidebarOpen(!sidebarOpen)} />
-
                     <div className="main-content">
                         <div className={`sidebar ${sidebarOpen ? '' : 'mobile-hidden'}`}>
                             <div className="sidebar-section">
@@ -836,7 +342,6 @@ JSON 형식으로만 응답:
                                     <p>{SAMPLE_CHARACTERS.characterB.occupation}</p>
                                 </div>
                             </div>
-
                             <div className="sidebar-section">
                                 <div className="section-title">Story Status</div>
                                 <div className="stats-grid">
@@ -858,7 +363,6 @@ JSON 형식으로만 응답:
                                     </div>
                                 </div>
                             </div>
-
                             <div className="sidebar-section gallery-section">
                                 <div className="section-title">Gallery ({unlockedImages.length}/{IMAGE_CONFIG.images.length})</div>
                                 <div className="gallery-grid">
@@ -880,18 +384,15 @@ JSON 형식으로만 응답:
                                 </div>
                             </div>
                         </div>
-
                         <div className="chat-area">
                             <div className="chat-header">
                                 <div className="chat-title">{SAMPLE_CHARACTERS.characterA.name} × {SAMPLE_CHARACTERS.characterB.name}</div>
                                 <div className="scene-info">{INITIAL_SCENE.location}</div>
                             </div>
-
                             <div className="messages-container">
                                 {messages.map((msg, idx) => (
                                     <div key={idx} className={`message-bubble ${msg.type}`}>
                                         {msg.type === "system" && <div className="message-content">{msg.content}</div>}
-                                        
                                         {msg.type === "story" && (
                                             <>
                                                 <div className="message-meta">📖 스토리</div>
@@ -902,12 +403,7 @@ JSON 형식으로만 응답:
                                                         {msg.choices?.length > 0 && (
                                                             <div className="choice-grid">
                                                                 {msg.choices.map((choice, i) => (
-                                                                    <button
-                                                                        key={i}
-                                                                        className="choice-btn"
-                                                                        onClick={() => handleChoiceClick(choice)}
-                                                                        disabled={loading}
-                                                                    >
+                                                                    <button key={i} className="choice-btn" onClick={() => handleChoiceClick(choice)} disabled={loading}>
                                                                         → {choice}
                                                                     </button>
                                                                 ))}
@@ -917,7 +413,6 @@ JSON 형식으로만 응답:
                                                 </div>
                                             </>
                                         )}
-                                        
                                         {msg.type === "user" && (
                                             <>
                                                 <div className="message-meta" style={{textAlign: 'right', marginRight: '15px'}}>👤 당신의 행동</div>
@@ -927,26 +422,16 @@ JSON 형식으로만 응답:
                                                 </div>
                                             </>
                                         )}
-
                                         {msg.type === "error" && <div className="error-message">{msg.content}</div>}
                                     </div>
                                 ))}
-                                
                                 {loading && <div className="loading-indicator">스토리를 생성하는 중입니다</div>}
                                 <div ref={messagesEndRef} />
                             </div>
-
                             <div className="input-area">
                                 <form onSubmit={handleSendMessage}>
                                     <div className="input-wrapper">
-                                        <input
-                                            type="text"
-                                            className="input-field"
-                                            placeholder='다음 "대사"와 "행동"을 입력 하세요'
-                                            value={userInput}
-                                            onChange={(e) => setUserInput(e.target.value)}
-                                            disabled={loading}
-                                        />
+                                        <input type="text" className="input-field" placeholder='다음 "대사"와 "행동"을 입력 하세요' value={userInput} onChange={(e) => setUserInput(e.target.value)} disabled={loading} />
                                         <button type="submit" className="send-btn" disabled={loading || !userInput.trim()}>▶</button>
                                     </div>
                                 </form>
