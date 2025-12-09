@@ -553,6 +553,7 @@
             border-radius: 10px;
             margin: 20px;
             text-align: center;
+            line-height: 1.6;
         }
 
         /* 모바일 대응 */
@@ -782,85 +783,102 @@
                 setLoading(true);
 
                 try {
-                    const systemPrompt = `당신은 한국 BL 장르의 인터랙티브 픽션 작가입니다.
+                    const prompt = `당신은 한국 BL 장르의 인터랙티브 픽션 작가입니다.
 
-[캐릭터 정보]
-- 캐릭터A (공): ${SAMPLE_CHARACTERS.characterA.name}, ${SAMPLE_CHARACTERS.characterA.age}세, ${SAMPLE_CHARACTERS.characterA.personality}
-- 캐릭터B (수): ${SAMPLE_CHARACTERS.characterB.name}, ${SAMPLE_CHARACTERS.characterB.age}세, ${SAMPLE_CHARACTERS.characterB.personality}
+[캐릭터]
+- 공: ${SAMPLE_CHARACTERS.characterA.name}, ${SAMPLE_CHARACTERS.characterA.age}세, ${SAMPLE_CHARACTERS.characterA.personality}
+- 수: ${SAMPLE_CHARACTERS.characterB.name}, ${SAMPLE_CHARACTERS.characterB.age}세, ${SAMPLE_CHARACTERS.characterB.personality}
 
 [현재 상황]
-- 시간/장소: ${INITIAL_SCENE.time} / ${INITIAL_SCENE.location}
-- 현재 호감도: ${affectionScore}점
-- 현재 흥분도: ${excitementLevel}%
-- 진행 턴: ${turnCount}
+- 장소: ${INITIAL_SCENE.location}
+- 호감도: ${affectionScore}/100
+- 흥분도: ${excitementLevel}%
+- 턴: ${turnCount}
 
-[작문 규칙]
-1. ${SAMPLE_CHARACTERS.characterB.name}의 1인칭 시점으로 작성
-2. 감정을 직접 설명하지 말고 신체 반응으로 표현
+[규칙]
+1. ${SAMPLE_CHARACTERS.characterB.name}의 1인칭 시점
+2. 감정을 신체 반응으로 표현
 3. 300-500자 분량
-4. 대사는 따옴표 없이 자연스럽게
+4. JSON 형식으로 응답
 
-반드시 다음 JSON 형식으로만 응답하세요:
+사용자 행동: ${userMessage}
+
+다음 JSON 형식으로만 응답하세요:
 {
-  "narrative": "서술 텍스트",
+  "narrative": "서술",
   "affection_change": 0,
   "excitement_change": 0,
-  "choices": ["선택지1", "선택지2", "선택지3", "선택지4"]
-}
+  "choices": ["선택1", "선택2", "선택3", "선택4"]
+}`;
 
-사용자 행동: ${userMessage}`;
+                    // 여러 모델 시도
+                    const models = [
+                        'gemini-1.5-pro-latest',
+                        'gemini-1.5-pro',
+                        'gemini-pro'
+                    ];
 
-                    // Gemini API v1 올바른 엔드포인트
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
-                    
-                    console.log("API 요청:", apiUrl);
+                    let response = null;
+                    let lastError = null;
 
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{
-                                    text: systemPrompt
-                                }]
-                            }],
-                            generationConfig: {
-                                temperature: 0.9,
-                                topK: 40,
-                                topP: 0.95,
-                                maxOutputTokens: 1024,
+                    for (const model of models) {
+                        try {
+                            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                            
+                            console.log(`시도 중: ${model}`);
+
+                            response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        parts: [{
+                                            text: prompt
+                                        }]
+                                    }],
+                                    generationConfig: {
+                                        temperature: 0.9,
+                                        topK: 40,
+                                        topP: 0.95,
+                                        maxOutputTokens: 1024,
+                                    }
+                                })
+                            });
+
+                            if (response.ok) {
+                                console.log(`성공: ${model}`);
+                                break;
+                            } else {
+                                lastError = await response.json().catch(() => ({}));
+                                console.log(`실패: ${model}`, lastError);
                             }
-                        })
-                    });
+                        } catch (e) {
+                            lastError = e;
+                            console.log(`오류: ${model}`, e);
+                        }
+                    }
 
-                    console.log("API 응답 상태:", response.status);
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        console.error("API 오류:", errorData);
-                        throw new Error(`API 오류 (${response.status}): ${errorData.error?.message || '알 수 없는 오류'}`);
+                    if (!response || !response.ok) {
+                        throw new Error(lastError?.error?.message || '모든 모델 시도 실패');
                     }
 
                     const data = await response.json();
-                    console.log("API 응답 데이터:", data);
+                    console.log("API 응답:", data);
                     
                     if (data.candidates && data.candidates[0]) {
                         let text = data.candidates[0].content.parts[0].text;
                         
-                        // JSON 추출 시도
+                        // JSON 추출
                         let result;
                         try {
-                            // 코드 블록 제거
                             text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-                            
-                            // JSON 찾기
                             const jsonMatch = text.match(/\{[\s\S]*\}/);
+                            
                             if (jsonMatch) {
                                 result = JSON.parse(jsonMatch[0]);
                             } else {
-                                // JSON 없으면 기본 구조로
                                 result = {
                                     narrative: text,
                                     affection_change: Math.floor(Math.random() * 5),
@@ -902,34 +920,27 @@
                 } catch (error) {
                     console.error("API Error:", error);
                     
-                    // 상세한 오류 메시지
                     let errorMsg = "오류가 발생했습니다.\n\n";
                     
-                    if (error.message.includes('404')) {
-                        errorMsg += "❌ API 엔드포인트 오류 (404)\n\n";
+                    if (error.message.includes('API_KEY_INVALID')) {
+                        errorMsg += "❌ API 키가 유효하지 않습니다.\n\n";
                         errorMsg += "해결 방법:\n";
-                        errorMsg += "1. API 키가 올바른지 확인\n";
-                        errorMsg += "2. Google AI Studio에서 새 키 발급\n";
-                        errorMsg += "3. Gemini API가 활성화되어 있는지 확인\n\n";
-                        errorMsg += "API 키 발급: https://aistudio.google.com/app/apikey";
-                    } else if (error.message.includes('401')) {
-                        errorMsg += "❌ 인증 오류 (401)\n\n";
-                        errorMsg += "API 키가 유효하지 않습니다.\n";
-                        errorMsg += "새로운 API 키를 발급받아주세요.";
-                    } else if (error.message.includes('403')) {
-                        errorMsg += "❌ 권한 오류 (403)\n\n";
-                        errorMsg += "API 사용 권한이 없습니다.\n";
-                        errorMsg += "Gemini API를 활성화해주세요.";
+                        errorMsg += "1. Google AI Studio에서 새 키 발급\n";
+                        errorMsg += "2. 키를 정확히 복사했는지 확인\n";
+                        errorMsg += "3. 공백이 포함되지 않았는지 확인";
+                    } else if (error.message.includes('PERMISSION_DENIED')) {
+                        errorMsg += "❌ Gemini API 권한이 없습니다.\n\n";
+                        errorMsg += "Google AI Studio에서 Gemini API를 활성화해주세요.";
                     } else {
-                        errorMsg += error.message;
+                        errorMsg += `오류 내용: ${error.message}\n\n`;
+                        errorMsg += "API 키를 확인하고 다시 시도해주세요.";
                     }
                     
                     alert(errorMsg);
                     
-                    // 오류 메시지를 채팅에 표시
                     setMessages(prev => [...prev, {
                         type: "error",
-                        content: `오류: ${error.message}`
+                        content: `⚠️ ${error.message}`
                     }]);
                 } finally {
                     setLoading(false);
@@ -978,11 +989,12 @@
                                 스토리 시작하기
                             </button>
                             <div className="api-help">
-                                <strong>API 키 발급 방법:</strong><br/>
+                                <strong>🔑 API 키 발급 방법:</strong><br/><br/>
                                 1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> 접속<br/>
-                                2. "Get API Key" 클릭<br/>
-                                3. "Create API key" 선택<br/>
-                                4. 생성된 키를 복사하여 입력
+                                2. 좌측 메뉴에서 "Get API Key" 클릭<br/>
+                                3. "Create API key in new project" 선택<br/>
+                                4. 생성된 키를 복사 (AIza로 시작)<br/>
+                                5. 위 입력창에 붙여넣기
                             </div>
                         </div>
                     </div>
